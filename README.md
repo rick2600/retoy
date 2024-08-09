@@ -33,8 +33,10 @@ You can also compile with ASAN `make asan` and with debug enabled `make debug`
 To build everything: `make build_all`
 
 ## Running
+
+### Run
 ```
-./src/retoy -r 'a{1,3}(b|c)d{1,}' -o /tmp/re.bc -a /tmp/re.ast.json
+./retoy -r 'a{1,3}(b|c)d{1,}' -o /tmp/re.bc -a /tmp/re.ast.json
 Regex:                 a{1,3}(b|c)d{1,}
 Output filename:       /tmp/re.bc
 AST filename:          /tmp/re.ast.json
@@ -42,6 +44,10 @@ AST filename:          /tmp/re.ast.json
 AST file:        /tmp/re.ast.json
 ================================================================================
 Compiled program: /tmp/re.bc
+```
+### Show disaassembly listing and the automata
+```
+python ./tools/disassembler.py /tmp/re.bc
 ```
 
 ## References
