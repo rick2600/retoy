@@ -35,6 +35,8 @@ To build everything: `make build_all`
 ## Running
 
 ### Run
+Let's use the regex `a{1,3}(b|c)d{1,}` as example
+
 ```
 ./retoy -r 'a{1,3}(b|c)d{1,}' -o /tmp/re.bc -a /tmp/re.ast.json
 Regex:                 a{1,3}(b|c)d{1,}
@@ -45,9 +47,26 @@ AST file:        /tmp/re.ast.json
 ================================================================================
 Compiled program: /tmp/re.bc
 ```
-### Show disaassembly listing and the automata
+### Show disassembly listing and the automata
 ```
 python ./tools/disassembler.py /tmp/re.bc
+0x0000:   0261                 char 61
+0x0002:   0b0b0000000d000000   split 0x000b, 0x000d
+0x000b:   0261                 char 61
+0x000d:   0b1600000018000000   split 0x0016, 0x0018
+0x0016:   0261                 char 61
+0x0018:   0b2100000028000000   split 0x0021, 0x0028
+0x0021:   0262                 char 62
+0x0023:   0c2a000000           jmp 0x002a
+0x0028:   0263                 char 63
+0x002a:   0264                 char 64
+0x002c:   0b2a00000035000000   split 0x002a, 0x0035
+0x0035:   0d                   accept
+```
+
+### Show the AST
+```
+python ./tools/show_ast.py /tmp/re.ast.json
 ```
 
 ## References
