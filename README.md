@@ -52,8 +52,10 @@ Compiled program: /tmp/re.bc
 ```
 python ./tools/show_ast.py /tmp/re.ast.json
 ```
+
 ![AST](/assets/ast.png)
 
+Regex: a{1,3}(b|c)d{1,}
 
 ### Show disassembly listing and the NFA
 ```
