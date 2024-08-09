@@ -1,4 +1,4 @@
-# Original
+# Inst Sequences
 ```
 e1e2
     codes for e1
