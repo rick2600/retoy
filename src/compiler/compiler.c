@@ -41,8 +41,6 @@ static void prog2file(const char* filename, const uint8_t* data, size_t data_siz
 
 
 static void dump_ast(opts_t* opts, ast_t* ast) {
-    puts("================================================================================");
-    printf("AST file:        %s\n", opts->ast_file);
     char* json = ast_json_dump(ast, opts->regex);
     ast2file(opts->ast_file, json);
     free(json);
@@ -50,8 +48,6 @@ static void dump_ast(opts_t* opts, ast_t* ast) {
 
 
 static void dump_prog(opts_t* opts, prog_t* prog) {
-    puts("================================================================================");
-    printf("Compiled program: %s\n", opts->output);
     size_t size = sizeof(prog_t) + prog->header.code.size + prog->header.data.size;
     prog2file(opts->output, (uint8_t*)prog, size);
     free(prog);
