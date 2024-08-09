@@ -97,6 +97,9 @@ void ast_node_set_add_item(ast_node_t* node, ast_node_t* item) {
 void ast_free(ast_node_t* node) {
     if (node == NULL) return;
 
+    if (node->quantifier)
+        ast_free(node->quantifier);
+
     switch(node->type) {
         case NODE_CONCAT:
             ast_free(node->as.concat.left);
