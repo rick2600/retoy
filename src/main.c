@@ -5,15 +5,16 @@
 #include "utils/opts.h"
 
 
-
 int main(int argc, char** argv) {
     opts_t opts = opts_parser(argc, argv);
     opts_print(&opts);
 
-    if (opts.regex == NULL)
+    if (opts.regex == NULL) {
         opts_help(argv[0]);
+        exit(EXIT_SUCCESS);
+    }
 
     bytecode_t* bc = compile(&opts);
     bytecode_free(bc);
-    return 0;
+    exit(EXIT_SUCCESS);
 }
