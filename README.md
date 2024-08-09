@@ -47,7 +47,15 @@ AST file:        /tmp/re.ast.json
 ================================================================================
 Compiled program: /tmp/re.bc
 ```
-### Show disassembly listing and the automata
+
+### Show the AST
+```
+python ./tools/show_ast.py /tmp/re.ast.json
+```
+![AST](/assets/ast.png)
+
+
+### Show disassembly listing and the NFA
 ```
 python ./tools/disassembler.py /tmp/re.bc
 0x0000:   0261                 char 61
@@ -63,11 +71,7 @@ python ./tools/disassembler.py /tmp/re.bc
 0x002c:   0b2a00000035000000   split 0x002a, 0x0035
 0x0035:   0d                   accept
 ```
-
-### Show the AST
-```
-python ./tools/show_ast.py /tmp/re.ast.json
-```
+![NFA](/assets/nfa.png)
 
 ## References
 1. https://swtch.com/~rsc/regexp/regexp1.html
