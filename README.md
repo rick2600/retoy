@@ -42,10 +42,6 @@ Let's use the regex `a{1,3}(b|c)d{1,}` as example
 Regex:                 a{1,3}(b|c)d{1,}
 Output filename:       /tmp/re.bc
 AST filename:          /tmp/re.ast.json
-================================================================================
-AST file:        /tmp/re.ast.json
-================================================================================
-Compiled program: /tmp/re.bc
 ```
 
 ### Show the AST
