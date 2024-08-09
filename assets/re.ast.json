@@ -1,0 +1,39 @@
+{
+	"regex":	"a{1,3}(b|c)d{1,}",
+	"ast":	{
+		"type":	"concat",
+		"left":	{
+			"type":	"concat",
+			"left":	{
+				"type":	"char",
+				"char":	97,
+				"quantifier":	{
+					"type":	"quantifier",
+					"range":	[1, 3]
+				}
+			},
+			"right":	{
+				"type":	"group",
+				"expr":	{
+					"type":	"alternation",
+					"left":	{
+						"type":	"char",
+						"char":	98
+					},
+					"right":	{
+						"type":	"char",
+						"char":	99
+					}
+				}
+			}
+		},
+		"right":	{
+			"type":	"char",
+			"char":	100,
+			"quantifier":	{
+				"type":	"quantifier",
+				"range":	[1, 4294967295]
+			}
+		}
+	}
+}
