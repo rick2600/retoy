@@ -27,6 +27,9 @@ class Section:
         self.address = address
         self.size = size
 
+    def readn(self, off, n):
+        start = self.address + off
+        return self.prog.mem[start:start+n]
 
     def read8(self, off):
         return self.prog.mem[self.address+off]
@@ -53,10 +56,14 @@ class Inst:
         self.addr = data['addr']
         self.opcodes = data['opcodes']
         self.text = data['text']
+        self.extra = data['extra']
 
     def __str__(self):
         opcodes_s = ''.join([f"{op:02x}" for op in self.opcodes])
-        return f"0x{self.addr:04x}:   {opcodes_s.ljust(10*2)} {self.text}"
+        out = f"0x{self.addr:04x}:   {opcodes_s.ljust(10*2)} {self.text}"
+        if self.extra:
+            out = f'{out.ljust(60)}; [{self.extra}]'
+        return out
 
 
 class NFA:
@@ -108,6 +115,9 @@ class NFA:
                 elif opcode == OP_MATCH_WHITESPACE:
                     label = '[\\s]'
 
+                elif opcode == OP_MATCH_IN_SET:
+                    label = f'[{self.insts[i].extra}]'
+
                 elif opcode == OP_MATCHNOT_DIGIT:
                     label = '[^0-9]'
 
@@ -116,6 +126,9 @@ class NFA:
 
                 elif opcode == OP_MATCHNOT_WHITESPACE:
                     label = '[^\\s]'
+
+                elif opcode == OP_MATCHNOT_IN_SET:
+                    label = f'[^{self.insts[i].extra}]'
 
                 self.g.edge(node_name, target, label)
 
@@ -135,6 +148,7 @@ class Disassembler:
         text = '?'
         opcode = self.prog.code.read8(addr)
         opcodes.append(opcode)
+        extra = None
 
         if opcode == OP_MATCH_ANY:
             text = 'any'
@@ -179,7 +193,37 @@ class Disassembler:
         elif opcode == OP_MATCHNOT_WHITESPACE:
             text = 'matchnot.s'
 
-        return Inst({'addr': addr, 'opcodes': opcodes, 'text': text})
+        elif opcode == OP_MATCH_IN_SET or opcode == OP_MATCHNOT_IN_SET:
+            isnt_name = 'match.set'
+            if opcode == OP_MATCHNOT_IN_SET: isnt_name = 'matchnot.set'
+            opcodes += [self.prog.code.read8(addr+1+i) for i in range(4)]
+            bitmap_addr = self.prog.code.read32(addr+1)
+            bitmap = self.prog.data.readn(bitmap_addr, 256//8)
+            extra = self.bitmap2s(bitmap)
+            text = f'{isnt_name} ds:0x{bitmap_addr:04x}'
+
+
+        return Inst({'addr': addr, 'opcodes': opcodes, 'text': text, 'extra': extra})
+
+
+    def bitmap2s(self, bitmap):
+        bmap = []
+        for i in range(256//8): bmap += list(f"{bitmap[i]:08b}")
+
+        chars = [i for i in range(len(bmap)) if bmap[i] == '1']
+        ranges = []
+        while chars:
+            therange = [chars.pop(0)]
+            while chars and (chars[0] - therange[-1]) == 1:
+                if len(therange) > 1: therange.pop()
+                therange.append(chars.pop(0))
+            ranges.append(therange)
+
+        ranges_s = []
+        for r in ranges:
+            ranges_s.append('-'.join([chr(b) for b in r]))
+        return ','.join(ranges_s)
+
 
     def disas_all(self):
         insts = []

@@ -3,6 +3,8 @@
 #include <string.h>
 #include "codegen.h"
 #include "bytecode.h"
+#include "../utils/bitmap.h"
+
 
 #define CURRENT_ADDRESS(bc) (((bc)->code).count)
 
@@ -26,10 +28,16 @@ static void patch32(bytecode_section_t* section, size_t addr, uint32_t data) {
 }
 
 
+static size_t write_bitmap(bytecode_section_t* section, bitmap_t* bitmap) {
+    size_t written_addr = section->count;
+    bytecode_write(section, bitmap->bits, sizeof(bitmap_t));
+    return written_addr;
+}
+
+
 static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
     size_t inst_addr = CURRENT_ADDRESS(bc);
     if (node == NULL) return inst_addr;
-
 
     if (node->quantifier) {
         ast_node_t* q = node->quantifier;
@@ -50,11 +58,9 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
 
             //L2:
             // ...
-
             patch32(&bc->code, l1_ref, l1_addr);
             patch32(&bc->code, l2_ref, CURRENT_ADDRESS(bc));
         }
-
         else if (q->as.quantifier.lower == 0 && q->as.quantifier.upper == INF) {
             /*  e*
                     L1: split L2, L3
@@ -73,7 +79,6 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
 
             // L3:
             // ...
-
             patch32(&bc->code, l1_ref, l1_addr);
             patch32(&bc->code, l2_ref, l2_addr);
             patch32(&bc->code, l3_ref, CURRENT_ADDRESS(bc));
@@ -90,7 +95,7 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
             size_t l2_ref = emit32(&bc->code, 0);
 
             // L2:
-            //
+            // ...
             patch32(&bc->code, l1_ref, l1_addr);
             patch32(&bc->code, l2_ref, CURRENT_ADDRESS(bc));
         }
@@ -135,22 +140,17 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
             }
 
         }
-
         node->quantifier = q;
         return inst_addr;
     }
 
-
-
     if (node->type == NODE_ANY) {
         emit8(&bc->code, OP_MATCH_ANY);
     }
-
     else if (node->type == NODE_CHAR) {
         emit8(&bc->code, OP_MATCH_CHAR);
         emit8(&bc->code, node->as._char.value);
     }
-
     else if (node->type == NODE_CHAR_CLASS) {
         switch (node->as._char_class.value) {
             case DIGIT:             emit8(&bc->code, OP_MATCH_DIGIT);           break;
@@ -161,16 +161,13 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
             case NOT_WHITESPACE:    emit8(&bc->code, OP_MATCHNOT_WHITESPACE);   break;
         }
     }
-
     else if (node->type == NODE_GROUP) {
         do_codegen(bc, node->as.group.expr);
     }
-
     else if (node->type == NODE_CONCAT) {
         do_codegen(bc, node->as.concat.left);
         do_codegen(bc, node->as.concat.right);
     }
-
     else if (node->type == NODE_ALTERNATION) {
         /*
         e1|e2
@@ -193,14 +190,79 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
 
         // L3:
         // ...
-
         patch32(&bc->code, l1_ref, l1_addr);
         patch32(&bc->code, l2_ref, l2_addr);
         patch32(&bc->code, l3_ref, CURRENT_ADDRESS(bc));
     }
+    else if (node->type == NODE_SET) {
+        bitmap_t bitmap = {0};
+        ast_node_t* head = node->as.set.items.head;
+
+        for (ast_node_t* item = head; item; item = item->next) {
+            switch (item->type) {
+                case NODE_CHAR_RANGE:
+                    size_t lower = item->as._char_range.lower;
+                    size_t upper = item->as._char_range.upper;
+                    for (size_t i = lower; i <= upper; i++)
+                        bitmap_set_bit(&bitmap, i);
+                break;
+
+                case NODE_CHAR:
+                    bitmap_set_bit(&bitmap, item->as._char.value);
+                break;
+
+                case NODE_CHAR_CLASS:
+                    switch (item->as._char_class.value) {
+                        case DIGIT:
+                            for (int i = '0'; i <= '9'; i++) bitmap_set_bit(&bitmap, i);
+                        break;
+
+                        case WORDCHAR:
+                            for (int i = '0'; i <= '9'; i++) bitmap_set_bit(&bitmap, i);
+                            for (int i = 'a'; i <= 'z'; i++) bitmap_set_bit(&bitmap, i);
+                            for (int i = 'A'; i <= 'Z'; i++) bitmap_set_bit(&bitmap, i);
+                            bitmap_set_bit(&bitmap, '_');
+                        break;
+
+                        case WHITESPACE:
+                            // FIXME: Only space for now
+                            bitmap_set_bit(&bitmap, ' ');
+                        break;
+
+                        case NOT_DIGIT:
+                            for (int i = 0; i < 256; i++) {
+                                if (i >= '0' && i <= '9') continue;
+                                bitmap_set_bit(&bitmap, i);
+                            }
+                        break;
+
+                        case NOT_WORDCHAR:
+                            for (int i = 0; i < 256; i++) {
+                                if (i >= '0' && i <= '9') continue;
+                                if (i >= 'a' && i <= 'z') continue;
+                                if (i >= 'A' && i <= 'Z') continue;
+                                if (i == '_') continue;
+                                bitmap_set_bit(&bitmap, i);
+                            }
+                        break;
+
+                        case NOT_WHITESPACE:
+                            for (int i = 0; i < 256; i++) {
+                                if (i == ' ') continue;
+                                bitmap_set_bit(&bitmap, i);
+                            }
+                        break;
+                    }
+                break;
+            }
+        }
+        emit8(&bc->code, node->as.set.negative ? OP_MATCHNOT_IN_SET : OP_MATCH_IN_SET);
+        size_t bitmap_ref = emit32(&bc->code, 0);
+        size_t bitmap_addr = write_bitmap(&bc->data, &bitmap);
+        patch32(&bc->code, bitmap_ref, bitmap_addr);
+    }
     return inst_addr;
 }
-
 
 
 bytecode_t* codegen(ast_node_t* ast) {
