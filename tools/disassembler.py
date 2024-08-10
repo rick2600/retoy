@@ -59,38 +59,40 @@ class Inst:
         return f"0x{self.addr:04x}:   {opcodes_s.ljust(10*2)} {self.text}"
 
 
-class CFG:
+class NFA:
     def __init__(self, insts):
         self.insts = insts
         self.g = graphviz.Digraph(format='png')
         self.g.attr(rankdir='LR')
 
     def build(self):
-        shape_config = {'shape':'circle'}
+
 
         for inst in self.insts:
+            node_name = hex(inst.addr)
             if inst.opcodes[0] == OP_ACCEPT:
-                self.g.node(str(inst.addr), str(inst.addr), **{'shape':'doublecircle'})
+                shape_config = {'shape':'doublecircle', 'width':'.6', 'fixedsize': 'true'}
             else:
-                self.g.node(str(inst.addr), str(inst.addr), **shape_config)
+                shape_config = {'shape':'circle', 'width':'.6', 'fixedsize': 'true'}
+            self.g.node(node_name, node_name, **shape_config)
 
         for i in range(len(self.insts)):
             opcode = self.insts[i].opcodes[0]
+            node_name = hex(self.insts[i].addr)
             if opcode == OP_JMP:
                 arr = self.insts[i].text.split(" ")
-                target = int(arr[1], 16)
-                self.g.edge(str(self.insts[i].addr), str(target), "''", style='dotted')
+                target = hex(int(arr[1], 16))
+                self.g.edge(node_name, target, "''", style='dotted')
             elif opcode == OP_SPLIT:
                 matches = re.findall(r'0x[0-9a-fA-F]{1,8}', self.insts[i].text)
                 arr = self.insts[i].text.split(" ")
-                l1 = int(matches[0], 16)
-                l2 = int(matches[1], 16)
-                self.g.edge(str(self.insts[i].addr), str(l1), "''", style='dotted')
-                self.g.edge(str(self.insts[i].addr), str(l2), "''", style='dotted')
+                l1 = hex(int(matches[0], 16))
+                l2 = hex(int(matches[1], 16))
+                self.g.edge(node_name, l1, "''", style='dotted')
+                self.g.edge(node_name, l2, "''", style='dotted')
             else:
                 if i + 1 >= len(self.insts): continue
-                a = str(self.insts[i].addr)
-                b = str(self.insts[i+1].addr)
+                target = hex(self.insts[i+1].addr)
                 label = ''
 
                 if opcode == OP_MATCH_CHAR:
@@ -115,9 +117,9 @@ class CFG:
                 elif opcode == OP_MATCHNOT_WHITESPACE:
                     label = '[^\\s]'
 
-                self.g.edge(a, b, label)
+                self.g.edge(node_name, target, label)
 
-        self.g.render('/tmp/cfg', view=True)
+        self.g.render('/tmp/nfa', view=True)
 
 
 class Disassembler:
@@ -197,7 +199,7 @@ def main(filename):
     insts = disassembler.disas_all()
     for inst in insts:
         print(inst)
-    CFG(insts).build()
+    NFA(insts).build()
 
 
 if __name__ == "__main__":
