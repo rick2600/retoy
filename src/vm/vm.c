@@ -156,12 +156,20 @@ bool doVM(prog_t* prog, char* input) {
     return false;
 }
 
+bool VM(prog_t* prog, char* input) {
+    return doVM(prog, input);
+}
 
+/*
 bool VM(prog_t* prog, char* input) {
     bool success = false;
     while (!success && *input) {
         success = doVM(prog, input);
+        if (!success) {
+            *input = '_';
+        }
         input++;
     }
     return success;
 }
+*/
