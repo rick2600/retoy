@@ -13,7 +13,8 @@ static void run_prog(prog_t* prog) {
     while (fgets(input, sizeof(input), stdin) != NULL) {
         char* p = strchr(input, '\n');
         if (p) *p = '\0';
-        printf("%s => \"%s\"\n", VM(prog, input) ? "ACCEPTED" : "        ", input);
+        bool match = VM(prog, input);
+        printf("%s => \"%s\"\n", match ? "[M]" : "   ", input);
     }
 }
 
