@@ -111,8 +111,7 @@ bool VM(prog_t* prog, char* input) {
             case OP_MATCH_IN_SET:
                 bitmap = (bitmap_t*)(data + fetch_operand32(t.pc + 1));
                 if (!bitmap_bit(bitmap, *t.sp)) goto fail;
-                t.pc += 5;
-                t.sp++;
+                t.pc += 5; t.sp++;
                 continue;
             case OP_MATCHNOT_DIGIT:
                 if (is_digit(*t.sp)) goto fail;
@@ -129,8 +128,7 @@ bool VM(prog_t* prog, char* input) {
             case OP_MATCHNOT_IN_SET:
                 bitmap = (bitmap_t*)(data + fetch_operand32(t.pc + 1));
                 if (bitmap_bit(bitmap, *t.sp)) goto fail;
-                t.pc += 5;
-                t.sp++;
+                t.pc += 5; t.sp++;
                 continue;
             case OP_ACCEPT:
                 return true;
