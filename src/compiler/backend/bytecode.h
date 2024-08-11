@@ -60,6 +60,6 @@ void bytecode_free(bytecode_t* bytecode);
 void bytecode_patch_at(bytecode_section_t* section, size_t at, const uint8_t* data, size_t size);
 void bytecode_write_at(bytecode_section_t* section, size_t at, const uint8_t* data, size_t size);
 void bytecode_write(bytecode_section_t* section, const uint8_t* data, size_t size);
-prog_t* create_prog(bytecode_t* bytecode);
+prog_t* bytecode2prog(bytecode_t* bytecode);
 
 #endif

@@ -3,8 +3,8 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "../compiler/backend/bytecode.h"
 
-bool vm(uint8_t* code, uint8_t* data, char* input);
-
+bool VM(prog_t* prog, char* input);
 
 #endif

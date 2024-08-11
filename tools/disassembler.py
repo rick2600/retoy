@@ -73,8 +73,6 @@ class NFA:
         self.g.attr(rankdir='LR')
 
     def build(self):
-
-
         for inst in self.insts:
             node_name = hex(inst.addr)
             if inst.opcodes[0] == OP_ACCEPT:
@@ -221,7 +219,9 @@ class Disassembler:
 
         ranges_s = []
         for r in ranges:
-            ranges_s.append('-'.join([chr(b) for b in r]))
+            a = [f"'{chr(b)}'" if (b>=0x20 and b<=0x7f) else f'0x{b:02x}' for b in r]
+            ranges_s.append('-'.join(a))
+            #ranges_s.append('-'.join([chr(b) for b in r]))
         return ','.join(ranges_s)
 
 
@@ -237,12 +237,19 @@ class Disassembler:
         return insts
 
 
+    def data(self):
+        return self.prog.data.readn(0, self.prog.data.size)
+
+
 def main(filename):
     disassembler = Disassembler()
     disassembler.load_file(filename)
     insts = disassembler.disas_all()
     for inst in insts:
         print(inst)
+
+    #data = disassembler.data()
+
     NFA(insts).build()
 
 

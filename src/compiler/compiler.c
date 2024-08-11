@@ -50,17 +50,14 @@ static void dump_ast(opts_t* opts, ast_t* ast) {
 static void dump_prog(opts_t* opts, prog_t* prog) {
     size_t size = sizeof(prog_t) + prog->header.code.size + prog->header.data.size;
     prog2file(opts->output, (uint8_t*)prog, size);
-    free(prog);
 }
 
 
-bytecode_t* compile(opts_t* opts) {
+prog_t* compile(opts_t* opts) {
     ast_node_t* ast = parse(opts->regex);
-    bytecode_t* bc = codegen(ast);
-    prog_t* prog = create_prog(bc);
-
+    prog_t* prog = codegen(ast);
     if (opts->ast_file != NULL) dump_ast(opts, ast);
     if (opts->output != NULL) dump_prog(opts, prog);
     ast_free(ast);
-    return bc;
+    return prog;
 }

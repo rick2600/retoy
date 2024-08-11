@@ -57,22 +57,19 @@ void bytecode_free(bytecode_t* bytecode) {
 }
 
 
-prog_t* create_prog(bytecode_t* bytecode) {
+prog_t* bytecode2prog(bytecode_t* bytecode) {
     size_t code_size = bytecode->code.capacity;
     size_t data_size = bytecode->data.capacity;
-
     size_t size = sizeof(prog_t) + code_size + data_size;
-    prog_t* prog = calloc(size, sizeof(uint8_t));
 
+    prog_t* prog = calloc(size, sizeof(uint8_t));
     prog->header.code.address =  (uint8_t*)&prog->mem - (uint8_t*)prog;
     prog->header.code.size = code_size;
-
     prog->header.data.address = prog->header.code.address + code_size;
     prog->header.data.size = data_size;
 
     uint8_t* code = (uint8_t*)prog + prog->header.code.address;
     uint8_t* data = (uint8_t*)prog + prog->header.data.address;
-
     memcpy(code, bytecode->code.mem, bytecode->code.count * sizeof(uint8_t));
     memcpy(data, bytecode->data.mem, bytecode->data.count * sizeof(uint8_t));
     return prog;

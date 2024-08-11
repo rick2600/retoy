@@ -265,9 +265,10 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
 }
 
 
-bytecode_t* codegen(ast_node_t* ast) {
+prog_t* codegen(ast_node_t* ast) {
     bytecode_t* bc = bytecode_alloc();
     do_codegen(bc, ast);
     emit8(&bc->code, OP_ACCEPT);
-    return bc;
+    prog_t* prog = bytecode2prog(bc);
+    return prog;
 }

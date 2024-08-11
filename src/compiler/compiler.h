@@ -4,7 +4,7 @@
 #include "../utils/opts.h"
 #include "./backend/bytecode.h"
 
-bytecode_t* compile(opts_t* opts);
+prog_t* compile(opts_t* opts);
 
 #endif
 

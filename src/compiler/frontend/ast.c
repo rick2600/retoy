@@ -121,9 +121,6 @@ void ast_free(ast_node_t* node) {
             break;
         default:
             break;
-        //case NODE_STR:
-        //    free(node->as.str.value);
-        //    break;
     }
     free(node);
 }
