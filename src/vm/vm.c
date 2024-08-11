@@ -6,8 +6,8 @@
 #include "../utils/bitmap.h"
 
 #define THREAD(x, y) ((thread_t){.pc = (x), .sp = (y)})
-enum { MAXTHREAD = 1000 };
 
+enum { MAXTHREAD = 10000 };
 
 typedef struct  {
     uint8_t *pc;
@@ -82,7 +82,6 @@ bool VM(prog_t* prog, char* input) {
 
     thread_stack_t stack;
     stack.count = 0;
-
     push(&stack, THREAD(code, sp));
 
     while (stack.count > 0) {
@@ -140,14 +139,18 @@ bool VM(prog_t* prog, char* input) {
                 continue;
             case OP_SPLIT:
                 if (stack.count >= MAXTHREAD) {
-                    fprintf(stderr, "regexp overflow");
+                    fprintf(stderr, "regexp overflow\n");
                     return false;
                 }
                 uint32_t br0 = fetch_operand32(t.pc + 1);
                 uint32_t br1 = fetch_operand32(t.pc + 1 + 4);
-                push(&stack, THREAD(code + br1, t.sp)); // queue new thread
-                t.pc = code + br0;                      // continue current thread
+                push(&stack, THREAD(code + br1, t.sp));     // queue new thread
+                t.pc = code + br0;                          // continue current thread
                 continue;
+            default:
+                fprintf(stderr, "invalid opcode: 0x%02x\n", *t.pc);
+                return false;
+                break;
             }
         }
         fail:;

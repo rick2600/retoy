@@ -7,6 +7,17 @@
 #include "vm/vm.h"
 
 
+static void run_prog(prog_t* prog) {
+    printf("================================================================================\n");
+    char input[256];
+    while (fgets(input, sizeof(input), stdin) != NULL) {
+        char* p = strchr(input, '\n');
+        if (p) *p = '\0';
+        printf("%s => \"%s\"\n", VM(prog, input) ? "ACCEPTED" : "        ", input);
+    }
+}
+
+
 int main(int argc, char** argv) {
     opts_t opts = opts_parser(argc, argv);
     if (opts.regex == NULL) {
@@ -15,13 +26,6 @@ int main(int argc, char** argv) {
     }
     opts_print(&opts);
     prog_t* prog = compile(&opts);
-
-    printf("================================================================================\n");
-    char input[128];
-    while (fgets(input, sizeof(input), stdin) != NULL) {
-        char* p = strchr(input, '\n');
-        if (p) *p = '\0';
-        printf("%s => \"%s\"\n", VM(prog, input) ? "ACCEPTED" : "        ", input);
-    }
+    run_prog(prog);
     exit(EXIT_SUCCESS);
 }
