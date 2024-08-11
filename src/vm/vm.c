@@ -74,7 +74,7 @@ static bool is_whitespace(uint8_t ch) {
 
 
 // https://swtch.com/~rsc/regexp/regexp2.html
-bool VM(prog_t* prog, char* input) {
+bool doVM(prog_t* prog, char* input) {
     uint8_t* code = (uint8_t*)prog + prog->header.code.address;
     uint8_t* data = (uint8_t*)prog + prog->header.data.address;
     uint8_t* sp = (uint8_t*)input;
@@ -154,4 +154,14 @@ bool VM(prog_t* prog, char* input) {
         fail:;
     }
     return false;
+}
+
+
+bool VM(prog_t* prog, char* input) {
+    bool success = false;
+    while (!success && *input) {
+        success = doVM(prog, input);
+        input++;
+    }
+    return success;
 }
