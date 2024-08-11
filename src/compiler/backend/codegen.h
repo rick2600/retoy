@@ -5,6 +5,6 @@
 #include "../frontend/ast.h"
 #include "bytecode.h"
 
-bytecode_t* codegen(ast_node_t* node);
+prog_t* codegen(ast_node_t* ast);
 
 #endif
