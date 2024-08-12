@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include "../compiler/backend/bytecode.h"
-#include "../utils/bitmap.h"
+#include "../utils/bitmap256.h"
 
 #define THREAD(x, y) ((thread_t){.pc = (x), .sp = (y)})
 
@@ -19,6 +20,9 @@ typedef struct {
     thread_t threads[MAXTHREAD];
     int count;
 } thread_stack_t;
+
+
+thread_stack_t stack;
 
 
 static void print_header(prog_t* prog) {
@@ -73,14 +77,30 @@ static bool is_whitespace(uint8_t ch) {
 }
 
 
+/*
+static void report_match() {
+}
+*/
+
+
+static void print_match(thread_t t) {
+    /*
+    printf("<");
+    for (uint8_t* s =  t.start; s < t.sp; s++) {
+        printf("%c", *s);
+    }
+    printf(">\n");
+    */
+}
+
+
 // https://swtch.com/~rsc/regexp/regexp2.html
 bool doVM(prog_t* prog, char* input) {
     uint8_t* code = (uint8_t*)prog + prog->header.code.address;
     uint8_t* data = (uint8_t*)prog + prog->header.data.address;
     uint8_t* sp = (uint8_t*)input;
-    bitmap_t* bitmap = NULL;
+    bitmap256_t* bitmap256 = NULL;
 
-    thread_stack_t stack;
     stack.count = 0;
     push(&stack, THREAD(code, sp));
 
@@ -90,47 +110,58 @@ bool doVM(prog_t* prog, char* input) {
             switch (*t.pc) {
             case OP_MATCH_ANY:
                 if (*t.sp == '\0') goto fail;
+                //report_match();
                 t.pc++; t.sp++;
                 continue;
             case OP_MATCH_CHAR:
                 if (*t.sp != fetch_operand8(t.pc + 1)) goto fail;
+                //report_match();
                 t.pc += 2; t.sp++;
                 continue;
             case OP_MATCH_DIGIT:
                 if (!is_digit(*t.sp)) goto fail;
+                //report_match();
                 t.pc++; t.sp++;
                 continue;
             case OP_MATCH_WORDCHAR:
                 if (!is_wordchar(*t.sp)) goto fail;
+                //report_match();
                 t.pc++; t.sp++;
                 continue;
             case OP_MATCH_WHITESPACE:
                 if (!is_whitespace(*t.sp)) goto fail;
+                //report_match();
                 t.pc++; t.sp++;
                 continue;
             case OP_MATCH_IN_SET:
-                bitmap = (bitmap_t*)(data + fetch_operand32(t.pc + 1));
-                if (!bitmap_bit(bitmap, *t.sp)) goto fail;
+                bitmap256 = (bitmap256_t*)(data + fetch_operand32(t.pc + 1));
+                if (!bitmap256_test(bitmap256, *t.sp)) goto fail;
+                //report_match();
                 t.pc += 5; t.sp++;
                 continue;
             case OP_MATCHNOT_DIGIT:
                 if (is_digit(*t.sp)) goto fail;
+                //report_match();
                 t.pc++; t.sp++;
                 continue;
             case OP_MATCHNOT_WORDCHAR:
                 if (is_wordchar(*t.sp)) goto fail;
+                //report_match();
                 t.pc++; t.sp++;
                 continue;
             case OP_MATCHNOT_WHITESPACE:
                 if (is_whitespace(*t.sp)) goto fail;
+                //report_match();
                 t.pc++; t.sp++;
                 continue;
             case OP_MATCHNOT_IN_SET:
-                bitmap = (bitmap_t*)(data + fetch_operand32(t.pc + 1));
-                if (bitmap_bit(bitmap, *t.sp)) goto fail;
+                bitmap256 = (bitmap256_t*)(data + fetch_operand32(t.pc + 1));
+                if (bitmap256_test(bitmap256, *t.sp)) goto fail;
+                //report_match();
                 t.pc += 5; t.sp++;
                 continue;
             case OP_ACCEPT:
+                print_match(t);
                 return true;
             case OP_JMP:
                 t.pc = code + fetch_operand32(t.pc + 1);
@@ -151,13 +182,20 @@ bool doVM(prog_t* prog, char* input) {
                 break;
             }
         }
-        fail:;
+        fail: ;
     }
     return false;
 }
 
+
 bool VM(prog_t* prog, char* input) {
     return doVM(prog, input);
+    /*
+    while (*input) {
+        doVM(prog, input);
+        input++;
+    }
+    */
 }
 
 /*

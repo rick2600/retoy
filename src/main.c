@@ -9,7 +9,7 @@
 
 static void run_prog(prog_t* prog) {
     printf("================================================================================\n");
-    char input[256];
+    char input[2048];
     while (fgets(input, sizeof(input), stdin) != NULL) {
         char* p = strchr(input, '\n');
         if (p) *p = '\0';
