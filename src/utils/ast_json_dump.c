@@ -31,6 +31,7 @@ static char* node_type_to_str(ast_node_type_t type) {
         case NODE_CHAR_RANGE:       return "char_range";
         case NODE_SET:              return "char_set";
         case NODE_START_OF_LINE:    return "start_of_line";
+        case NODE_END_OF_LINE:      return "end_of_line";
         default:                    return "unknown";
     }
 }
@@ -88,8 +89,10 @@ static cJSON* visit(ast_node_t* node) {
     else if (node->type == NODE_ANY) {
     }
     else if (node->type == NODE_START_OF_LINE) {
-        cJSON_AddItemToObject(obj, "expr", visit(node->as.group.expr));
     }
+    else if (node->type == NODE_END_OF_LINE) {
+    }
+
     if (node->quantifier)
         cJSON_AddItemToObject(obj, "quantifier", visit(node->quantifier));
     return obj;

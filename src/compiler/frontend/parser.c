@@ -353,7 +353,9 @@ static ast_node_t* parse_regex() {
     } else {
         node = expression();
     }
-    //TODO: '$'
+    if (match(TOKEN_DOLLAR)) {
+        node = ast_node_concat(node, ast_node_end_of_line());
+    }
     return node;
 }
 

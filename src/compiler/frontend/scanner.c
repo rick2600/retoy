@@ -113,6 +113,7 @@ token_t scan_token() {
     if (match('|'))     return make_token(TOKEN_PIPE);
     if (match('.'))     return make_token(TOKEN_DOT);
     if (match('^'))     return make_token(TOKEN_CIRCUMFLEX);
+    if (match('$'))     return make_token(TOKEN_DOLLAR);
     if (match('('))     return make_token(TOKEN_LEFT_PAREN);
     if (match(')'))     return make_token(TOKEN_RIGHT_PAREN);
     if (match('['))     return make_token(TOKEN_LEFT_BRACKET);

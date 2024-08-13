@@ -169,6 +169,10 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
         emit8(&bc->code, OP_MARK_SOL);
     }
 
+     else if (node->type == NODE_END_OF_LINE) {
+        emit8(&bc->code, OP_MARK_EOL);
+    }
+
     else if (node->type == NODE_CONCAT) {
         do_codegen(bc, node->as.concat.left);
         do_codegen(bc, node->as.concat.right);

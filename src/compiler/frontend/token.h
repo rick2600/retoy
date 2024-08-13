@@ -24,6 +24,7 @@ typedef enum {
     TOKEN_STAR,                                 // *
     TOKEN_PLUS,                                 // +
     TOKEN_CIRCUMFLEX,                           // ^
+    TOKEN_DOLLAR,                               // $
     TOKEN_COMMA,                                // ,
     TOKEN_DOT,                                  // .
     TOKEN_CHAR_CLASS,                           // \d \D \w \W \s \S

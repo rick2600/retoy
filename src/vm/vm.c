@@ -103,11 +103,17 @@ match_t doVM(prog_t* prog, char* input) {
     stack.count = 0;
     push(&stack, THREAD(code, sp));
 
+    bool eol = false;
+
     while (stack.count > 0) {
         thread_t t = pop(&stack);
         for (;;) {
             switch (*t.pc) {
             case OP_MARK_SOL:
+                t.pc++;
+                continue;
+            case OP_MARK_EOL:
+                eol = true;
                 t.pc++;
                 continue;
             case OP_MATCH_ANY:
@@ -153,6 +159,9 @@ match_t doVM(prog_t* prog, char* input) {
                 t.pc += 5; t.sp++;
                 continue;
             case OP_ACCEPT:
+                if (eol) {
+                    if (*t.sp != '\0') goto fail;
+                }
                 return MATCH(sp, t.sp-1);
             case OP_JMP:
                 t.pc = code + fetch_operand32(t.pc + 1);
