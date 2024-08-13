@@ -344,7 +344,8 @@ static ast_node_t* expression() {
 
 // Regex    ::= '^'? Expression
 static ast_node_t* parse_regex() {
-    // TODO: '^'
+    if (match(TOKEN_CIRCUMFLEX))
+        return ast_node_start_of_line(expression());
     return expression();
 }
 

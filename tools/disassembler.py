@@ -18,6 +18,7 @@ OP_MATCHNOT_IN_SET      = 10
 OP_SPLIT                = 11
 OP_JMP                  = 12
 OP_ACCEPT               = 13
+OP_MARK_SOS             = 14
 
 
 
@@ -103,6 +104,9 @@ class NFA:
                 if opcode == OP_MATCH_CHAR:
                     ch = str(chr(self.insts[i].opcodes[1]))
                     label = f"'{ch}'"
+
+                elif opcode == OP_MARK_SOS:
+                    label = '(sol)'
 
                 elif opcode == OP_MATCH_DIGIT:
                     label = '[0-9]'
@@ -190,6 +194,9 @@ class Disassembler:
 
         elif opcode == OP_MATCHNOT_WHITESPACE:
             text = 'matchnot.s'
+
+        elif opcode == OP_MARK_SOS:
+            text = 'mark.sos'
 
         elif opcode == OP_MATCH_IN_SET or opcode == OP_MATCHNOT_IN_SET:
             isnt_name = 'match.set'

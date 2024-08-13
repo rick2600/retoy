@@ -18,6 +18,8 @@ typedef enum {
     NODE_CHAR,
     NODE_CHAR_CLASS,
     NODE_CHAR_RANGE,
+    NODE_START_OF_LINE,
+    NODE_END_OF_LINE
 } ast_node_type_t;
 
 
@@ -68,6 +70,13 @@ typedef struct ast_node {
         struct {
             int value;
         } _char;
+
+        struct {
+            struct ast_node* expr;
+        } sol;      // start-of-line
+
+        struct {
+        } eol;      // end-of-line
     } as;
 } ast_node_t;
 
@@ -82,6 +91,8 @@ ast_node_t* ast_node_set(bool negative);
 ast_node_t* ast_node_char_class(int value);
 ast_node_t* ast_node_char(int value);
 ast_node_t* ast_node_char_range(char lower, char upper);
+ast_node_t* ast_node_start_of_line(ast_node_t* expr);
+
 void ast_node_set_add_item(ast_node_t* node, ast_node_t* item);
 void ast_free(ast_node_t* node);
 

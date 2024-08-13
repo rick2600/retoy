@@ -112,6 +112,9 @@ void ast_free(ast_node_t* node) {
         case NODE_GROUP:
             ast_free(node->as.group.expr);
             break;
+        case NODE_START_OF_LINE:
+            ast_free(node->as.sol.expr);
+            break;
         case NODE_SET:
             for (ast_node_t* item = node->as.set.items.head; item; ) {
                 ast_node_t* next = item->next;
@@ -123,4 +126,11 @@ void ast_free(ast_node_t* node) {
             break;
     }
     free(node);
+}
+
+
+ast_node_t* ast_node_start_of_line(ast_node_t* expr) {
+    ast_node_t* node =  ast_create_node(NODE_START_OF_LINE);
+    node->as.sol.expr = expr;
+    return node;
 }
