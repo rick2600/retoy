@@ -3,7 +3,7 @@
 #include <string.h>
 #include "codegen.h"
 #include "bytecode.h"
-#include "../utils/bitmap.h"
+#include "../utils/bitmap256.h"
 
 
 #define CURRENT_ADDRESS(bc) (((bc)->code).count)
@@ -28,9 +28,9 @@ static void patch32(bytecode_section_t* section, size_t addr, uint32_t data) {
 }
 
 
-static size_t write_bitmap(bytecode_section_t* section, bitmap_t* bitmap) {
+static size_t write_bitmap(bytecode_section_t* section, bitmap256_t* bitmap) {
     size_t written_addr = section->count;
-    bytecode_write(section, bitmap->bits, sizeof(bitmap_t));
+    bytecode_write(section, bitmap->bits, sizeof(bitmap256_t));
     return written_addr;
 }
 
@@ -164,6 +164,15 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
     else if (node->type == NODE_GROUP) {
         do_codegen(bc, node->as.group.expr);
     }
+
+    else if (node->type == NODE_START_OF_LINE) {
+        emit8(&bc->code, OP_MARK_SOL);
+    }
+
+     else if (node->type == NODE_END_OF_LINE) {
+        emit8(&bc->code, OP_MARK_EOL);
+    }
+
     else if (node->type == NODE_CONCAT) {
         do_codegen(bc, node->as.concat.left);
         do_codegen(bc, node->as.concat.right);
@@ -195,7 +204,8 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
         patch32(&bc->code, l3_ref, CURRENT_ADDRESS(bc));
     }
     else if (node->type == NODE_SET) {
-        bitmap_t bitmap = {0};
+        bitmap256_t bitmap;
+        bitmap256_clear_all(&bitmap);
         ast_node_t* head = node->as.set.items.head;
 
         for (ast_node_t* item = head; item; item = item->next) {
@@ -204,35 +214,35 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
                     size_t lower = item->as._char_range.lower;
                     size_t upper = item->as._char_range.upper;
                     for (size_t i = lower; i <= upper; i++)
-                        bitmap_set_bit(&bitmap, i);
+                        bitmap256_set(&bitmap, i);
                 break;
 
                 case NODE_CHAR:
-                    bitmap_set_bit(&bitmap, item->as._char.value);
+                    bitmap256_set(&bitmap, item->as._char.value);
                 break;
 
                 case NODE_CHAR_CLASS:
                     switch (item->as._char_class.value) {
                         case DIGIT:
-                            for (int i = '0'; i <= '9'; i++) bitmap_set_bit(&bitmap, i);
+                            for (int i = '0'; i <= '9'; i++) bitmap256_set(&bitmap, i);
                         break;
 
                         case WORDCHAR:
-                            for (int i = '0'; i <= '9'; i++) bitmap_set_bit(&bitmap, i);
-                            for (int i = 'a'; i <= 'z'; i++) bitmap_set_bit(&bitmap, i);
-                            for (int i = 'A'; i <= 'Z'; i++) bitmap_set_bit(&bitmap, i);
-                            bitmap_set_bit(&bitmap, '_');
+                            for (int i = '0'; i <= '9'; i++) bitmap256_set(&bitmap, i);
+                            for (int i = 'a'; i <= 'z'; i++) bitmap256_set(&bitmap, i);
+                            for (int i = 'A'; i <= 'Z'; i++) bitmap256_set(&bitmap, i);
+                            bitmap256_set(&bitmap, '_');
                         break;
 
                         case WHITESPACE:
                             // FIXME: Only space for now
-                            bitmap_set_bit(&bitmap, ' ');
+                            bitmap256_set(&bitmap, ' ');
                         break;
 
                         case NOT_DIGIT:
                             for (int i = 0; i < 256; i++) {
                                 if (i >= '0' && i <= '9') continue;
-                                bitmap_set_bit(&bitmap, i);
+                                bitmap256_set(&bitmap, i);
                             }
                         break;
 
@@ -242,14 +252,14 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
                                 if (i >= 'a' && i <= 'z') continue;
                                 if (i >= 'A' && i <= 'Z') continue;
                                 if (i == '_') continue;
-                                bitmap_set_bit(&bitmap, i);
+                                bitmap256_set(&bitmap, i);
                             }
                         break;
 
                         case NOT_WHITESPACE:
                             for (int i = 0; i < 256; i++) {
                                 if (i == ' ') continue;
-                                bitmap_set_bit(&bitmap, i);
+                                bitmap256_set(&bitmap, i);
                             }
                         break;
                     }

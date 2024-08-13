@@ -24,6 +24,8 @@ typedef enum {
     OP_SPLIT                = 11,
     OP_JMP                  = 12,
     OP_ACCEPT               = 13,
+    OP_MARK_SOL             = 14,
+    OP_MARK_EOL             = 15
 } opcode_t;
 
 

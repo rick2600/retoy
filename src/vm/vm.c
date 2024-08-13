@@ -2,10 +2,16 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include "../compiler/backend/bytecode.h"
-#include "../utils/bitmap.h"
+#include "../utils/bitmap256.h"
+#include "vm.h"
 
-#define THREAD(x, y) ((thread_t){.pc = (x), .sp = (y)})
+
+#define THREAD(x, y)        ((thread_t){.pc = (x), .sp = (y)})
+#define MATCH(x, y)         ((match_t){.start = (x), .end = (y)})
+#define UNMATCH             ((match_t){.start = NULL, .end = NULL})
+
 
 enum { MAXTHREAD = 10000 };
 
@@ -19,6 +25,9 @@ typedef struct {
     thread_t threads[MAXTHREAD];
     int count;
 } thread_stack_t;
+
+
+thread_stack_t stack;
 
 
 static void print_header(prog_t* prog) {
@@ -73,21 +82,40 @@ static bool is_whitespace(uint8_t ch) {
 }
 
 
+static void print_match(thread_t t) {
+    /*
+    printf("<");
+    for (uint8_t* s =  t.start; s < t.sp; s++) {
+        printf("%c", *s);
+    }
+    printf(">\n");
+    */
+}
+
+
 // https://swtch.com/~rsc/regexp/regexp2.html
-bool doVM(prog_t* prog, char* input) {
+match_t doVM(prog_t* prog, char* input) {
     uint8_t* code = (uint8_t*)prog + prog->header.code.address;
     uint8_t* data = (uint8_t*)prog + prog->header.data.address;
     uint8_t* sp = (uint8_t*)input;
-    bitmap_t* bitmap = NULL;
+    bitmap256_t* bitmap256 = NULL;
 
-    thread_stack_t stack;
     stack.count = 0;
     push(&stack, THREAD(code, sp));
+
+    bool eol = false;
 
     while (stack.count > 0) {
         thread_t t = pop(&stack);
         for (;;) {
             switch (*t.pc) {
+            case OP_MARK_SOL:
+                t.pc++;
+                continue;
+            case OP_MARK_EOL:
+                eol = true;
+                t.pc++;
+                continue;
             case OP_MATCH_ANY:
                 if (*t.sp == '\0') goto fail;
                 t.pc++; t.sp++;
@@ -109,8 +137,8 @@ bool doVM(prog_t* prog, char* input) {
                 t.pc++; t.sp++;
                 continue;
             case OP_MATCH_IN_SET:
-                bitmap = (bitmap_t*)(data + fetch_operand32(t.pc + 1));
-                if (!bitmap_bit(bitmap, *t.sp)) goto fail;
+                bitmap256 = (bitmap256_t*)(data + fetch_operand32(t.pc + 1));
+                if (!bitmap256_test(bitmap256, *t.sp)) goto fail;
                 t.pc += 5; t.sp++;
                 continue;
             case OP_MATCHNOT_DIGIT:
@@ -126,19 +154,22 @@ bool doVM(prog_t* prog, char* input) {
                 t.pc++; t.sp++;
                 continue;
             case OP_MATCHNOT_IN_SET:
-                bitmap = (bitmap_t*)(data + fetch_operand32(t.pc + 1));
-                if (bitmap_bit(bitmap, *t.sp)) goto fail;
+                bitmap256 = (bitmap256_t*)(data + fetch_operand32(t.pc + 1));
+                if (bitmap256_test(bitmap256, *t.sp)) goto fail;
                 t.pc += 5; t.sp++;
                 continue;
             case OP_ACCEPT:
-                return true;
+                if (eol) {
+                    if (*t.sp != '\0') goto fail;
+                }
+                return MATCH(sp, t.sp-1);
             case OP_JMP:
                 t.pc = code + fetch_operand32(t.pc + 1);
                 continue;
             case OP_SPLIT:
                 if (stack.count >= MAXTHREAD) {
                     fprintf(stderr, "regexp overflow\n");
-                    return false;
+                    return UNMATCH;
                 }
                 uint32_t br0 = fetch_operand32(t.pc + 1);
                 uint32_t br1 = fetch_operand32(t.pc + 1 + 4);
@@ -147,29 +178,26 @@ bool doVM(prog_t* prog, char* input) {
                 continue;
             default:
                 fprintf(stderr, "invalid opcode: 0x%02x\n", *t.pc);
-                return false;
+                return UNMATCH;
                 break;
             }
         }
-        fail:;
+        fail: ;
     }
-    return false;
+    return UNMATCH;
 }
 
-bool VM(prog_t* prog, char* input) {
-    return doVM(prog, input);
-}
 
-/*
-bool VM(prog_t* prog, char* input) {
-    bool success = false;
-    while (!success && *input) {
-        success = doVM(prog, input);
-        if (!success) {
-            *input = '_';
-        }
+match_t VM(prog_t* prog, char* input) {
+    uint8_t* code = (uint8_t*)prog + prog->header.code.address;
+
+    if (*code == OP_MARK_SOL)
+        return doVM(prog, input);
+
+    while (*input) {
+        match_t match = doVM(prog, input);
+        if (match.start) return match;
         input++;
     }
-    return success;
+    return UNMATCH;
 }
-*/

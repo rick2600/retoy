@@ -9,12 +9,20 @@
 
 static void run_prog(prog_t* prog) {
     printf("================================================================================\n");
-    char input[256];
+    char input[2048];
+
     while (fgets(input, sizeof(input), stdin) != NULL) {
         char* p = strchr(input, '\n');
         if (p) *p = '\0';
-        bool match = VM(prog, input);
-        printf("%s => \"%s\"\n", match ? "[M]" : "   ", input);
+        match_t match = VM(prog, input);
+        printf("%s ", (match.start) ? "[M]" : "   ");
+        for (uint8_t* cur = (uint8_t*)input; *cur; cur++) {
+            if (cur >= match.start && cur <= match.end)
+                printf("\033[1;31m%c\033[0m", *cur);
+            else
+                printf("%c", *cur);
+        }
+        printf("\n");
     }
 }
 
