@@ -45,8 +45,7 @@ def build_graph(g, node):
         g.edge(node_name, expr)
 
     elif node['type'] == 'start_of_string':
-        expr = build_graph(g, node['expr'])
-        g.edge(node_name, expr)
+        pass
 
     elif node['type'] == 'char_class':
         class_name = node_name + ".class"

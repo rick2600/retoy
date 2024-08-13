@@ -72,7 +72,6 @@ typedef struct ast_node {
         } _char;
 
         struct {
-            struct ast_node* expr;
         } sol;      // start-of-line
 
         struct {
@@ -91,7 +90,9 @@ ast_node_t* ast_node_set(bool negative);
 ast_node_t* ast_node_char_class(int value);
 ast_node_t* ast_node_char(int value);
 ast_node_t* ast_node_char_range(char lower, char upper);
-ast_node_t* ast_node_start_of_line(ast_node_t* expr);
+ast_node_t* ast_node_start_of_line();
+ast_node_t* ast_node_end_of_line();
+
 
 void ast_node_set_add_item(ast_node_t* node, ast_node_t* item);
 void ast_free(ast_node_t* node);

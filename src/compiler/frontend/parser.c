@@ -343,10 +343,18 @@ static ast_node_t* expression() {
 
 
 // Regex    ::= '^'? Expression
+// TODO: Regex    ::= '^'? Expression '$'?
 static ast_node_t* parse_regex() {
-    if (match(TOKEN_CIRCUMFLEX))
-        return ast_node_start_of_line(expression());
-    return expression();
+    ast_node_t* node = NULL;
+    if (match(TOKEN_CIRCUMFLEX)) {
+        ast_node_t* sol = ast_node_start_of_line();
+        ast_node_t* expr = expression();;
+        node = ast_node_concat(sol, expr);
+    } else {
+        node = expression();
+    }
+    //TODO: '$'
+    return node;
 }
 
 
