@@ -24,6 +24,7 @@ void opts_print(opts_t* opts) {
            ,
            opts->regex, opts->output, opts->ast_file
            );
+    printf("================================================================================\n");
 }
 
 

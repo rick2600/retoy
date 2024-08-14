@@ -8,28 +8,11 @@
 #include "vm.h"
 
 
-#define THREAD(x, y)        ((thread_t){.pc = (x), .sp = (y)})
-#define MATCH(x, y)         ((match_t){.start = (x), .end = (y)})
-#define UNMATCH             ((match_t){.start = NULL, .end = NULL})
-
-
-enum { MAXTHREAD = 10000 };
-
-typedef struct  {
-    uint8_t *pc;
-    uint8_t *sp;
-} thread_t;
-
-
-typedef struct {
-    thread_t threads[MAXTHREAD];
-    int count;
-} thread_stack_t;
 
 
 thread_stack_t stack;
 
-
+/*
 static void print_header(prog_t* prog) {
     char sep[128] = {0};
     memset(sep, '=', 80);
@@ -39,7 +22,7 @@ static void print_header(prog_t* prog) {
     memset(sep, '-', 80);
     printf("%s\n", sep);
 }
-
+*/
 
 static void push(thread_stack_t* stack, thread_t t) {
     stack->threads[stack->count] = t;
@@ -79,17 +62,6 @@ static bool is_wordchar(uint8_t ch) {
 
 static bool is_whitespace(uint8_t ch) {
     return ch == ' ';
-}
-
-
-static void print_match(thread_t t) {
-    /*
-    printf("<");
-    for (uint8_t* s =  t.start; s < t.sp; s++) {
-        printf("%c", *s);
-    }
-    printf(">\n");
-    */
 }
 
 
@@ -191,13 +163,19 @@ match_t doVM(prog_t* prog, char* input) {
 match_t VM(prog_t* prog, char* input) {
     uint8_t* code = (uint8_t*)prog + prog->header.code.address;
 
-    if (*code == OP_MARK_SOL)
-        return doVM(prog, input);
+    match_t match = UNMATCH;
 
-    while (*input) {
-        match_t match = doVM(prog, input);
-        if (match.start) return match;
-        input++;
+    if (*code == OP_MARK_SOL) {
+        match = doVM(prog, input);
     }
-    return UNMATCH;
+    else  {
+        char* cur = input;
+        while (*cur) {
+            match = doVM(prog, cur);
+            if (match.start) break;
+            cur++;
+        }
+    }
+    match.input = (uint8_t*)input;
+    return match;
 }
