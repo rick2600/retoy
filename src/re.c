@@ -38,7 +38,7 @@ static bool match_part(re_match_t* match, uint8_t* p) {
 void re_print_match(re_match_t* match) {
     for (uint8_t* cur = match->input; *cur; cur++) {
         if (match_part(match, cur))
-            printf("\033[1;31m%c\033[0m", *cur);
+            printf(YELLOW"%c"RESET, *cur);
         else
             printf("%c", *cur);
     }
