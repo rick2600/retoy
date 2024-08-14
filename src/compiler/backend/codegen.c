@@ -262,8 +262,12 @@ static size_t do_codegen(bytecode_t* bc, ast_node_t* node) {
                                 bitmap256_set(&bitmap, i);
                             }
                         break;
+
+                        default: break;
                     }
                 break;
+
+                default: break;
             }
         }
         emit8(&bc->code, node->as.set.negative ? OP_MATCHNOT_IN_SET : OP_MATCH_IN_SET);
