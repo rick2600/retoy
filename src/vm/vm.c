@@ -5,9 +5,8 @@
 #include <stdlib.h>
 #include "../compiler/backend/bytecode.h"
 #include "../utils/bitmap256.h"
+#include "../re.h"
 #include "vm.h"
-
-
 
 
 thread_stack_t stack;
@@ -66,7 +65,7 @@ static bool is_whitespace(uint8_t ch) {
 
 
 // https://swtch.com/~rsc/regexp/regexp2.html
-match_t doVM(prog_t* prog, char* input) {
+re_submatch_t* doVM(prog_t* prog, char* input) {
     uint8_t* code = (uint8_t*)prog + prog->header.code.address;
     uint8_t* data = (uint8_t*)prog + prog->header.data.address;
     uint8_t* sp = (uint8_t*)input;
@@ -134,14 +133,14 @@ match_t doVM(prog_t* prog, char* input) {
                 if (eol) {
                     if (*t.sp != '\0') goto fail;
                 }
-                return MATCH(sp, t.sp-1);
+                return re_submatch(sp, t.sp-1);
             case OP_JMP:
                 t.pc = code + fetch_operand32(t.pc + 1);
                 continue;
             case OP_SPLIT:
                 if (stack.count >= MAXTHREAD) {
                     fprintf(stderr, "regexp overflow\n");
-                    return UNMATCH;
+                    return NULL;
                 }
                 uint32_t br0 = fetch_operand32(t.pc + 1);
                 uint32_t br1 = fetch_operand32(t.pc + 1 + 4);
@@ -150,32 +149,38 @@ match_t doVM(prog_t* prog, char* input) {
                 continue;
             default:
                 fprintf(stderr, "invalid opcode: 0x%02x\n", *t.pc);
-                return UNMATCH;
+                return NULL;
                 break;
             }
         }
         fail: ;
     }
-    return UNMATCH;
+    return NULL;
 }
 
 
-match_t VM(prog_t* prog, char* input) {
+re_match_t* VM(prog_t* prog, char* input) {
     uint8_t* code = (uint8_t*)prog + prog->header.code.address;
 
-    match_t match = UNMATCH;
+    re_match_t* match = NULL;
 
     if (*code == OP_MARK_SOL) {
-        match = doVM(prog, input);
+        re_submatch_t* sub = doVM(prog, input);
+        if (sub) {
+            match = re_match_create((uint8_t*)input);
+            re_add_submatch(match, sub);
+        }
     }
     else  {
         char* cur = input;
         while (*cur) {
-            match = doVM(prog, cur);
-            if (match.start) break;
+            re_submatch_t* sub = doVM(prog, cur);
+            if (sub) {
+                if (match == NULL) match = re_match_create((uint8_t*)input);
+                re_add_submatch(match, sub);
+            }
             cur++;
         }
     }
-    match.input = (uint8_t*)input;
     return match;
 }

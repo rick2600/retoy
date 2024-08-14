@@ -1,0 +1,17 @@
+1foo2
+abcd
+ab
+2bar1
+2foo1
+2bar1
+1not1
+afoo5
+1foob
+aaaaaa 1foo2 bbbb 1bar2
+foo5
+bar3
+123foo5abc
+425555bar2
+xabc
+3foo1xxxxxxxxxxxxxxx
+3foo1 abc

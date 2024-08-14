@@ -5,17 +5,7 @@
 #include "compiler/backend/bytecode.h"
 #include "utils/opts.h"
 #include "vm/vm.h"
-
-
-static void print_colored_match(match_t* match) {
-    for (uint8_t* cur = match->input; *cur; cur++) {
-        if (cur >= match->start && cur <= match->end)
-            printf("\033[1;31m%c\033[0m", *cur);
-        else
-            printf("%c", *cur);
-    }
-    printf("\n");
-}
+#include "re.h"
 
 
 static void run_prog(prog_t* prog) {
@@ -23,8 +13,8 @@ static void run_prog(prog_t* prog) {
     while (fgets(input, sizeof(input), stdin) != NULL) {
         char* p = strchr(input, '\n');
         if (p) *p = '\0';
-        match_t match = VM(prog, input);
-        print_colored_match(&match);
+        re_match_t* match = VM(prog, input);
+        if (match) re_print_match(match);
     }
 }
 
