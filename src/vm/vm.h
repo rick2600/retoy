@@ -10,7 +10,7 @@
 #define THREAD(x, y)        ((thread_t){.pc = (x), .sp = (y)})
 
 
-enum { MAXTHREAD = 10000 };
+enum { MAXTHREAD = 9999 };
 
 
 typedef struct  {
@@ -23,6 +23,13 @@ typedef struct {
     thread_t threads[MAXTHREAD];
     int count;
 } thread_stack_t;
+
+
+typedef struct {
+    size_t count;
+    size_t capacity;
+    uint32_t* threads;
+} vm_stats_t;
 
 
 re_match_t* VM(prog_t* prog, char* input);

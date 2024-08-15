@@ -34,4 +34,5 @@ re_submatch_t* re_submatch(uint8_t* start, uint8_t* end);
 re_match_t* re_match_create(uint8_t* input);
 void re_add_submatch(re_match_t* match, re_submatch_t* sub);
 void re_print_match(re_match_t* match);
+void re_free(re_match_t* match);
 #endif
