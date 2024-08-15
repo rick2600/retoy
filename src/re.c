@@ -46,5 +46,11 @@ void re_print_match(re_match_t* match) {
 }
 
 
-
-// TODO: void re_free()
+void re_free(re_match_t* match) {
+    for (re_submatch_t* cur = match->head; cur; ) {
+        re_submatch_t* next = cur->next;
+        free(cur);
+        cur = next;
+    }
+    free(match);
+}

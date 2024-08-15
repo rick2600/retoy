@@ -284,5 +284,6 @@ prog_t* codegen(ast_node_t* ast) {
     do_codegen(bc, ast);
     emit8(&bc->code, OP_ACCEPT);
     prog_t* prog = bytecode2prog(bc);
+    bytecode_free(bc);
     return prog;
 }

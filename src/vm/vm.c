@@ -7,9 +7,13 @@
 #include "../utils/bitmap256.h"
 #include "../re.h"
 #include "vm.h"
+#include "../cjson/cJSON.h"
+
 
 
 thread_stack_t stack;
+
+vm_stats_t stats;
 
 /*
 static void print_header(prog_t* prog) {
@@ -64,6 +68,27 @@ static bool is_whitespace(uint8_t ch) {
 }
 
 
+static void vm_stats_init(vm_stats_t* stats) {
+    stats->count = 0;
+    stats->capacity = 0;
+    stats->threads = NULL;
+}
+
+
+static void vm_stats_ensure_size(vm_stats_t* stats) {
+    if (stats->count + 1 > stats->capacity) {
+        stats->capacity = (stats->count == 0) ? 1 : 2 * stats->capacity;
+        stats->threads = realloc(stats->threads, stats->capacity * sizeof(uint32_t));
+    }
+}
+
+
+static void update_stats(vm_stats_t* stats, int n_threads) {
+    vm_stats_ensure_size(stats);
+    stats->threads[stats->count] = n_threads;
+    stats->count++;
+}
+
 // https://swtch.com/~rsc/regexp/regexp2.html
 re_submatch_t* doVM(prog_t* prog, char* input) {
     uint8_t* code = (uint8_t*)prog + prog->header.code.address;
@@ -79,6 +104,7 @@ re_submatch_t* doVM(prog_t* prog, char* input) {
     while (stack.count > 0) {
         thread_t t = pop(&stack);
         for (;;) {
+            update_stats(&stats, stack.count+1);
             switch (*t.pc) {
             case OP_MARK_SOL:
                 t.pc++;
@@ -156,7 +182,31 @@ re_submatch_t* doVM(prog_t* prog, char* input) {
 }
 
 
+static void dump_stats(vm_stats_t* stats) {
+    char* filename = "/tmp/retoy.stats.json";
+    cJSON* stats_obj = cJSON_CreateArray();
+    for (uint32_t i = 0; i < stats->count; i++) {
+        cJSON_AddItemToArray(stats_obj, cJSON_CreateNumber(stats->threads[i]));
+    }
+    char* data = cJSON_Print(stats_obj);
+    cJSON_Delete(stats_obj);
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        fprintf(stderr, "Could not open file %s for writing\n", filename);
+        exit(EXIT_FAILURE);
+    }
+    if (fprintf(file, "%s\n", data) < 0) {
+        fprintf(stderr, "Error writing to file %s\n", filename);
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+    fclose(file);
+    free(data);
+}
+
+
 re_match_t* VM(prog_t* prog, char* input) {
+    vm_stats_init(&stats);
     uint8_t* code = (uint8_t*)prog + prog->header.code.address;
 
     re_match_t* match = NULL;
@@ -179,5 +229,7 @@ re_match_t* VM(prog_t* prog, char* input) {
             cur++;
         }
     }
+    dump_stats(&stats);
+    free(stats.threads);
     return match;
 }

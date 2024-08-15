@@ -9,12 +9,15 @@
 
 
 static void run_prog(prog_t* prog) {
-    char input[2048];
+    char input[4096];
     while (fgets(input, sizeof(input), stdin) != NULL) {
         char* p = strchr(input, '\n');
         if (p) *p = '\0';
         re_match_t* match = VM(prog, input);
-        if (match) re_print_match(match);
+        if (match) {
+            re_print_match(match);
+            re_free(match);
+        }
     }
 }
 
@@ -28,5 +31,6 @@ int main(int argc, char** argv) {
     //opts_print(&opts);
     prog_t* prog = compile(&opts);
     run_prog(prog);
+    free(prog);
     exit(EXIT_SUCCESS);
 }
