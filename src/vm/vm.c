@@ -138,13 +138,10 @@ re_submatch_t* doVM(prog_t* prog, char* input) {
                 t.pc = code + fetch_operand32(t.pc + 1);
                 continue;
             case OP_SPLIT:
-                if (stack.count >= MAXTHREAD) {
-                    fprintf(stderr, "regexp overflow\n");
-                    return NULL;
-                }
                 uint32_t br0 = fetch_operand32(t.pc + 1);
                 uint32_t br1 = fetch_operand32(t.pc + 1 + 4);
-                push(&stack, THREAD(code + br1, t.sp));     // queue new thread
+                if (stack.count < MAXTHREAD)
+                    push(&stack, THREAD(code + br1, t.sp)); // queue new thread
                 t.pc = code + br0;                          // continue current thread
                 continue;
             default:
